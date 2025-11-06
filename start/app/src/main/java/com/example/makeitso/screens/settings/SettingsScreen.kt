@@ -26,60 +26,68 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.makeitso.R.drawable as AppIcon
 import com.example.makeitso.R.string as AppText
 import com.example.makeitso.common.composable.*
 import com.example.makeitso.common.ext.card
 import com.example.makeitso.common.ext.spacer
 import com.example.makeitso.theme.MakeItSoTheme
+import kotlinx.coroutines.flow.Flow
 
 @ExperimentalMaterialApi
 @Composable
 fun SettingsScreen(
-  restartApp: (String) -> Unit,
-  openScreen: (String) -> Unit,
-  viewModel: SettingsViewModel = hiltViewModel()
+    restartApp: (String) -> Unit,
+    openScreen: (String) -> Unit,
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
-  SettingsScreenContent(
-    uiState = viewModel.uiState,
-    onLoginClick = { viewModel.onLoginClick(openScreen) },
-    onSignUpClick = { viewModel.onSignUpClick(openScreen) },
-    onSignOutClick = { viewModel.onSignOutClick(restartApp) },
-    onDeleteMyAccountClick = { viewModel.onDeleteMyAccountClick(restartApp) }
-  )
+    // 🔽 AÑADE ESTA LÍNEA 🔽
+    val uiState by viewModel.uiState.collectAsState(
+        initial = SettingsUiState(false)
+    )
+
+    SettingsScreenContent(
+        uiState = uiState, // ◀️ ASEGÚRATE DE PASAR LA NUEVA VARIABLE
+        onLoginClick = { viewModel.onLoginClick(openScreen) },
+        onSignUpClick = { viewModel.onSignUpClick(openScreen) },
+        onSignOutClick = { viewModel.onSignOutClick(restartApp) },
+        onDeleteMyAccountClick = { viewModel.onDeleteMyAccountClick(restartApp) }
+    )
 }
 
 @ExperimentalMaterialApi
 @Composable
 fun SettingsScreenContent(
-  modifier: Modifier = Modifier,
-  uiState: SettingsUiState,
-  onLoginClick: () -> Unit,
-  onSignUpClick: () -> Unit,
-  onSignOutClick: () -> Unit,
-  onDeleteMyAccountClick: () -> Unit
+    modifier: Modifier = Modifier,
+    uiState: SettingsUiState, // CAMBIA ESTO (quita Flow<...>)
+    onLoginClick: () -> Unit,
+    onSignUpClick: () -> Unit,
+    onSignOutClick: () -> Unit,
+    onDeleteMyAccountClick: () -> Unit
 ) {
-  Column(
-    modifier = modifier.fillMaxWidth().fillMaxHeight().verticalScroll(rememberScrollState()),
-    horizontalAlignment = Alignment.CenterHorizontally
-  ) {
-    BasicToolbar(AppText.settings)
+    Column(
+        modifier = modifier.fillMaxWidth().fillMaxHeight().verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        BasicToolbar(AppText.settings)
 
-    Spacer(modifier = Modifier.spacer())
+        Spacer(modifier = Modifier.spacer())
 
-    if (uiState.isAnonymousAccount) {
-      RegularCardEditor(AppText.sign_in, AppIcon.ic_sign_in, "", Modifier.card()) {
-        onLoginClick()
-      }
+        // AHORA ESTO FUNCIONARÁ
+        if (uiState.isAnonymousAccount) {
+            RegularCardEditor(AppText.sign_in, AppIcon.ic_sign_in, "", Modifier.card()) {
+                onLoginClick()
+            }
 
-      RegularCardEditor(AppText.create_account, AppIcon.ic_create_account, "", Modifier.card()) {
-        onSignUpClick()
-      }
-    } else {
-      SignOutCard { onSignOutClick() }
-      DeleteMyAccountCard { onDeleteMyAccountClick() }
+            RegularCardEditor(AppText.create_account, AppIcon.ic_create_account, "", Modifier.card()) {
+                onSignUpClick()
+            }
+        } else {
+            SignOutCard { onSignOutClick() }
+            DeleteMyAccountCard { onDeleteMyAccountClick() }
+        }
     }
-  }
 }
 
 @ExperimentalMaterialApi
@@ -141,15 +149,16 @@ private fun DeleteMyAccountCard(deleteMyAccount: () -> Unit) {
 @ExperimentalMaterialApi
 @Composable
 fun SettingsScreenPreview() {
-  val uiState = SettingsUiState(isAnonymousAccount = false)
+    // CAMBIA ESTO:
+    val uiState = SettingsUiState(isAnonymousAccount = true) // Simula un estado
 
-  MakeItSoTheme {
-    SettingsScreenContent(
-      uiState = uiState,
-      onLoginClick = { },
-      onSignUpClick = { },
-      onSignOutClick = { },
-      onDeleteMyAccountClick = { }
-    )
-  }
+    MakeItSoTheme {
+        SettingsScreenContent(
+            uiState = uiState, // Pasa el estado simulado
+            onLoginClick = { },
+            onSignUpClick = { },
+            onSignOutClick = { },
+            onDeleteMyAccountClick = { }
+        )
+    }
 }
